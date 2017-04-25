@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Facebook Page</title>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<style type="text/css">
+		
+		#selectors {
+			width: 100%;
+			margin: 0 auto;
+		}
+
+		#selectors select:nth-child(1),select:nth-child(2) {
+			margin-right: 1.5em;
+		}
+
+	</style>
+</head>
+<body>
+
+	<div class="container">
+		
+		<div style="text-align: center;margin-bottom: 20px">
+			<h1>DATA FOR FACEBOOK</h1>	
+		    <a href="allCharts.html">
+		    	<button type="button" class="btn btn-info">VIEW LINE TIME SLIDER FOR FACEBOOK</button>
+		    </a>
+
+		     <a href="scatterplot_facebook.html">
+		    	<button type="button" class="btn btn-info">VIEW SCATTERPLOT FOR FACEBOOK</button>
+		    </a>
+
+		     <a href="wineRED_index.html">
+		    	<button type="button" class="btn btn-info">VIEW RED WINE DATA</button>
+		    </a>
+	    </div>
+
+		<div id="selectors" style="margin-bottom:3em;">
+			<label>
+				PieChart
+				<select id="piechart">
+					 <option value="Category">Category</option>
+			  <option value="Type">Type</option>
+				</select>
+			</label>
+
+			<label>
+				BarChart Y Axis Values
+				<select id="barchart">
+			  <option value="Lifetime Post Consumptions">Lifetime Post Consumptions</option>
+			  <option value="Lifetime Post Impressions by people who have liked your Page">Lifetime Post Impressions by people who have liked your Page</option>
+			  <option value="Lifetime Post Total Reach">Lifetime Post Total Reach</option>
+			  <option value="Lifetime Post Total Impressions">Lifetime Post Total Impressions</option>
+			  <option value="Lifetime Engaged Users">Lifetime Engaged Users</option>
+			  <option value="Lifetime Post Consumers">Lifetime Post Consumers</option>
+			  <option value="Lifetime Post reach by people who like your Page">Lifetime Post reach by people who like your Page</option>
+			  <option value="Lifetime People who have liked your Page and engaged with your post">Lifetime People who have liked your Page and engaged with your post</option>
+			  <option value="comment">Comment</option>
+			  <option value="like">Like</option>
+			  <option value="share">Share</option>
+			  <option value="Total Interactions">Total Interactions</option>
+				</select>	
+			</label>
+
+			<label>
+				BarGraph Color
+				<select id="colorSelect">
+					<option value="#a65628">Brown</option>
+					<option value="#e41a1c">Red</option>
+					<option value="#377eb8">Blue</option>
+					<option value="#4daf4a">Green</option>
+					<option value="#984ea3">Purple</option>
+					<option value="#ff7f00">Golden</option>
+					<option value="#ffff33">Yellow</option>
+				</select>
+			</label>
+
+			<label>PieChart Radius
+				<button id="pie-inc" type="button" class="btn btn-primary btn-sm">Increase</button>
+			</label>
+			<label>
+				<button id="pie-dec" type="button" class="btn btn-primary btn-sm">Decrease</button>
+			</label>
+		</div>
+
+	    <div id="categories-id"><h4>Category</h4></div>
+	    <div id="type-id"><h4>Post Weekday</h4></div>
+	    <div id="bar-id"><h4>LifeTime Post Total Reach</h4></div>
+	
+    </div>
+
+    <link rel="stylesheet" type="text/css" href="https://dc-js.github.io/dc.js/css/dc.css" />
+    <script src="https://dc-js.github.io/dc.js/js/d3.js"></script>
+    <script src="https://dc-js.github.io/dc.js/js/crossfilter.js"></script>
+    <script src="https://dc-js.github.io/dc.js/js/dc.js"></script>
+
+	<script type="text/javascript">
+
+		$(function() {
+
+			var mapObj = {
+				pieChartType : "Category",
+				barChartType : "Lifetime Post Total Reach",
+				barColor : "#4daf4a",
+				pieRad : 70,
+			};
+
+			var renderMap = function(pie, bar, barChartColor, pieRadUpdate) {				
+
+				var pieChartType = mapObj.pieChartType;
+				var barChartType = mapObj.barChartType;
+				var barColor = mapObj.barColor;
+				var pieRad = mapObj.pieRad;
+
+				console.log(mapObj);
+				if(pie !== undefined && pie !== ""){
+					mapObj.pieChartType = pie;
+					pieChartType = pie;
+				}
+				if(bar !== undefined && bar !== "") {
+					mapObj.barChartType = bar;
+					barChartType = bar;
+				}
+				if(barChartColor !== undefined && barChartColor !== "") {
+					mapObj.barColor = barChartColor;
+					barColor = barChartColor;
+				}
+				if(pieRadUpdate !== undefined && pieRadUpdate != ""){
+					mapObj.pieRad += pieRadUpdate;
+					pieRad = mapObj.pieRad;
+				}
+
+				$('#categories-id h4').text(pieChartType);
+				$('#bar-id h4').text(barChartType);
+
+				d3.csv("dataset_Facebook-table.csv", function(error, experiments) {
+
+					var ndx = crossfilter(experiments),
+					// DATA, DIMENSIONS AND GROUPS        var ndx = crossfilter(assassinationData);
+
+					//Data for Pie chart
+					categoryDimension = ndx.dimension(function (d) {
+
+						if(pieChartType === "Type")
+							return d[pieChartType];
+						else
+							return +d[pieChartType];
+					});
+
+					categoryDimensionGroup = categoryDimension.group();
+
+					//Histogram
+					typeDimension = ndx.dimension(function (d) {
+					    return d["Post Weekday"];
+					})
+					var typeCategory = typeDimension.group()
+					    .reduceCount(function (d) {
+					        return d["Post Weekday"];
+					})
+
+
+					//Data for bar chart
+					runDimension = ndx.dimension(function(d) {return +d["Post Hour"];})
+					var speedSumGroup  = runDimension.group().reduceSum(function(d) {return d[barChartType];});
+
+
+					
+					//Pie chart
+					var chart1 = dc.pieChart("#categories-id");
+					chart1.width(384)
+					    .height(240)
+					    .slicesCap(4)
+					    .innerRadius(pieRad)
+					    .dimension(categoryDimension)
+					    .group(categoryDimensionGroup)
+					    .renderLabel(true)
+					    .legend(dc.legend())
+					    .title(function (d) {
+					        return d.value;
+					    });
+
+
+					//Row Chart
+					var chart2 = dc.rowChart("#type-id");
+					    chart2
+					    .width(480)
+					    .x(d3.scale.linear().range([6,20]))
+					    .margins({top: 5, left: 10, right: 10, bottom: 20})
+					    .colors(d3.scale.category10())
+					    .dimension(typeDimension)
+					    .group(typeCategory)
+					    .elasticX(true)
+					    .xAxis().ticks(5);
+
+
+					 
+					//Bar chart  
+					var chart3 = dc.barChart("#bar-id");    
+					chart3
+					    .width(1000)
+					    .height(480)
+					    .margins({top: 20, right: 50, bottom: 30, left: 60})
+					    .colors(d3.scale.category10())
+					    .ordinalColors([barColor])
+					    .x(d3.scale.linear().domain([3,11]))
+					    .xAxisLabel("Post Hour")
+					    .brushOn(false)
+					    .yAxisLabel(barChartType)
+					    .dimension(runDimension)
+					    .group(speedSumGroup)
+					    .on('renderlet', function(chart) {
+					        chart3.selectAll('rect').on("click", function(d) {
+					        console.log("click!", d);
+					     });
+					     });
+
+					    dc.renderAll();
+
+				});
+			}	
+
+			renderMap();
+
+			$('#piechart').change(function() {
+				renderMap($(this).val(),"");
+			});
+
+			$('#barchart').change(function() {
+				renderMap("",$(this).val());
+			});
+
+			$('#colorSelect').change(function() {
+				renderMap("","",$(this).val());
+			});
+
+			$('#pie-inc').on('click',function() {
+				renderMap("","","",15);
+			});
+
+			$('#pie-dec').on('click',function() {
+				renderMap("","","",-15);
+			});
+
+		});
+	
+	</script>
+		
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>dc.js - Filter Group Example</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/dc.css"/>
+    <style type="text/css">
+    	
+    #test2, #test3, #test4 {
+    	float: right;
+    }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+<script type="text/javascript" src="header.js"></script>
+<div id="test1"></div>
+<div id="test2"></div>
+<div id="test3"></div>
+<div id="test4"></div>
+
+<script type="text/javascript" src="vendor_js/d3.js"></script>
+<script type="text/javascript" src="vendor_js/crossfilter.js"></script>
+<script type="text/javascript" src="vendor_js/dc.js"></script>
+<script type="text/javascript">
+
+var chart1 = dc.barChart("#test1");
+var chart2 = dc.barChart("#test2");
+var chart3 = dc.barChart("#test3");
+var chart4 = dc.barChart("#test4");
+
+d3.csv("dataset_Facebook-table.csv", function(error, experiments) {
+    experiments.forEach(function(x) {
+        x["Post Hour"] = +x["Post Hour"];
+    });
+    var ndx                 = crossfilter(experiments),
+        runDimension        = ndx.dimension(function(d) {return +d["Category"];}),
+        speedSumGroup       = runDimension.group().reduceSum(function(d) {return d["Post Hour"];});
+    function bar_chart(chart) {
+        chart
+            .width(400)
+            .height(300)
+            .x(d3.scale.linear().domain([1,4]))
+            .brushOn(false)
+            .yAxisLabel("This is the Y Axis!")
+            .dimension(runDimension)
+            .group(speedSumGroup);
+        return chart;
+    }   
+
+    bar_chart(chart1).brushOn(true);
+    bar_chart(chart2);
+    bar_chart(chart3);
+    bar_chart(chart4);
+
+    function rangesEqual(range1, range2) {
+        if (!range1 && !range2) {
+            return true;
+        }
+        else if (!range1 || !range2) {
+            return false;
+        }
+        else if (range1.length === 0 && range2.length === 0) {
+            return true;
+        }
+        else if (range1[0].valueOf() === range2[0].valueOf() &&
+            range1[1].valueOf() === range2[1].valueOf()) {
+            return true;
+        }
+        return false;
+    }
+
+    // Now dealing with all the charts
+
+     chart1.focusCharts = function (chartlist) {
+        if (!arguments.length) {
+            return this._focusCharts;
+        }
+        this._focusCharts = chartlist; // only needed to support the getter above
+        this.on('filtered', function (range_chart) {
+            if (!range_chart.filter()) {
+                dc.events.trigger(function() {
+                    chartlist.forEach(function(focus_chart) {
+                        focus_chart.x().domain(focus_chart.xOriginalDomain());
+                    });
+                });
+            } else chartlist.forEach(function(focus_chart) {
+                if (!rangesEqual(range_chart.filter(), focus_chart.filter())) {
+                    dc.events.trigger(function () {
+                        focus_chart.focus(range_chart.filter());
+                    });
+                }
+            });
+        });
+        return this;
+    };
+
+    chart1.focusCharts([chart2,chart3,chart4]);
+    dc.renderAll();
+});
+</script>
+
+</div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

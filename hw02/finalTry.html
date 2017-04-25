@@ -1,0 +1,102 @@
+<!DOCtype html>
+<html lang="en">
+<head>
+    <title> Mutliple Graphs </title>
+</head>
+<body>
+<div class="container">
+       
+    <div id="categories-id"><h4>Category</h4></div>
+    <div id="type-id"><h4>Post Weekday</h4></div>
+    <div id="bar-id"><h4>LifeTime Post Total Reach</h4></div>
+
+    </div>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://dc-js.github.io/dc.js/css/dc.css" />
+    <script src="https://dc-js.github.io/dc.js/js/d3.js"></script>
+    <script src="https://dc-js.github.io/dc.js/js/crossfilter.js"></script>
+    <script src="https://dc-js.github.io/dc.js/js/dc.js"></script>
+    <script type="text/javascript">
+        
+
+
+    d3.csv("dataset_Facebook-table.csv", function(error, experiments) {
+
+        var ndx = crossfilter(experiments),
+        // DATA, DIMENSIONS AND GROUPS        var ndx = crossfilter(assassinationData);
+        
+        //Data for Pie chart
+        categoryDimension = ndx.dimension(function (d) {
+            return +d["Category"];
+        })
+        categoryDimensionGroup = categoryDimension.group()
+
+
+        //Histogram
+        typeDimension = ndx.dimension(function (d) {
+            return d["Post Weekday"];
+        })
+        var typeCategory = typeDimension.group()
+            .reduceCount(function (d) {
+                return d["Post Weekday"];
+        })
+
+
+        //Data for bar chart
+        runDimension = ndx.dimension(function(d) {return +d["Post Hour"];})
+        var speedSumGroup  = runDimension.group().reduceSum(function(d) {return d["Lifetime Post Total Reach"];});
+
+
+        //Pie chart
+        var chart1 = dc.pieChart("#categories-id");
+        chart1.width(384)
+            .height(240)
+            .slicesCap(4)
+            .innerRadius(25)
+            .dimension(categoryDimension)
+            .group(categoryDimensionGroup)
+            .renderLabel(true)
+            .legend(dc.legend())
+            .title(function (d) {
+                return d.value;
+            });
+
+        
+        //Row Chart
+        var chart2 = dc.rowChart("#type-id");
+        chart2
+            .width(480)
+            .x(d3.scale.linear().range([6,20]))
+            .margins({top: 5, left: 10, right: 10, bottom: 20})
+            .colors(d3.scale.category10())
+            .dimension(typeDimension)
+            .group(typeCategory)
+            .elasticX(true)
+            .xAxis().ticks(5);
+
+
+
+        //Bar chart  
+        var chart3 = dc.barChart("#bar-id");    
+        chart3
+            .width(1000)
+            .height(480)
+            .margins({top: 20, right: 50, bottom: 30, left: 60})
+            .x(d3.scale.linear().domain([1,19]))
+            .brushOn(false)
+            .yAxisLabel("Lifetime Post Total Reach")
+            .dimension(runDimension)
+            .group(speedSumGroup)
+            .on('renderlet', function(chart) {
+                chart3.selectAll('rect').on("click", function(d) {
+                console.log("click!", d);
+             });
+             });
+
+            dc.renderAll();
+
+        });
+    </script>
+
+</div>
+</body>

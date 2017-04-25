@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>dc.js - Heatmap Filtering Example</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+    <style>
+    </style>
+</head>
+<body>
+
+<div class="container">
+<script type="text/javascript" src="vendor_js/header.js"></script>
+
+<h2>HeatMap and Bar Chart</h2>
+<div id="heatmap"></div>
+<div id="barchart"></div>
+<script type="text/javascript" src="vendor_js/d3.js"></script>
+<script type="text/javascript" src="vendor_js/crossfilter.js"></script>
+<script type="text/javascript" src="vendor_js/dc.js"></script>
+<script type="text/javascript">
+
+var chartGroup = "chartGroup";
+var heatmapChart = dc.heatMap("#heatmap", chartGroup);
+var barChart = dc.barChart("#barchart", chartGroup);
+
+d3.csv("dataset_Facebook-table.csv", function(error, data) {
+
+        //Dc Data Reading starts here
+         var ndx = crossfilter(data),
+            weekDay = ndx.dimension(function(d) { return [+d["Post Weekday"]]; }),
+            post_Month = weekDay.group().reduceSum(function(d) {return +d["Post Month"];});
+   			//post_Month = ndx.dimension(function(d) {return [+d["Post Month"]];});
+
+     var heatColorMapping = d3.scale.linear()
+            .domain([1, 9, 19])
+            .range(["red", "#e5e5e5", "green"]);
+
+
+      heatmapChart
+                .width(12 * 80 + 80)
+                .height(27 * 10 + 40)
+                .dimension(weekDay)
+                .group(post_Month)
+                .keyAccessor(function(d) { return +d.key[0]; })
+                .valueAccessor(function(d) { return +d.key[1]; })
+               .colorAccessor(function(d) { return +d.value; })
+                .title(function(d) {
+                    return " Month:   " + d.key[0] + "\n" +
+                           "  Year:   " + d.key[1] + "\n" +
+                           "  Gain:   " + d["Post Hour"] + "\n";})
+                .colors(heatColorMapping);
+
+        heatmapChart.xBorderRadius(0);
+        heatmapChart.yBorderRadius(0);
+
+        heatmapChart.render();
+
+
+         var monthlyAxis = ndx.dimension(function (d) { return +d["Post Month"]; });
+         var yAxis = monthlyAxis.group().reduceSum(function(d) {return +d["Lifetime Engaged Users"];});
+
+         barChart
+                .dimension(monthlyAxis)
+                .group(yAxis)
+                .width(12 * 80 + 80)
+                .height(480)
+                .y(d3.scale.linear().domain([-10.0,100.0]))
+                .x(d3.scale.linear().domain([-0.5,11.5]))
+                .elasticY(true)
+                .centerBar(true);
+        barChart.render();
+
+        //dc.renderAll();
+    });
+
+</script>
+
+</div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

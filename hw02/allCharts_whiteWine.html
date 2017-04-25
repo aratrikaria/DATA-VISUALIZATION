@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WHITE WINE SLIDER</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+</head>
+<body>
+
+    <div class="container">
+    <div style="text-align: center;margin-bottom: 20px">
+        <h1>Interactive Time Slider and Line Graphs for White Wine Data</h1>    
+        <a href="wineWHITE_index.html">
+        <button type="button" class="btn btn-info">Back</button>
+        </a>
+    </div>
+        <div id="test"></div>
+        <div id="test-overview"></div>
+    </div>
+
+    <script type="text/javascript" src="header.js"></script>
+    <script type="text/javascript" src="vendor_js/d3.js"></script>
+    <script type="text/javascript" src="vendor_js/crossfilter.js"></script>
+    <script type="text/javascript" src="vendor_js/dc.js"></script>
+    <script type="text/javascript">
+
+        var focusChart = dc.seriesChart("#test");
+        var overviewChart = dc.seriesChart("#test-overview");
+        var ndx, runDimension, runGroup, overviewRunDimension, overviewRunGroup;
+
+        d3.csv("winequality-white.csv", function(error, experiments) {
+
+          ndx = crossfilter(experiments);
+          runDimension = ndx.dimension(function(d) {return [+d["quality"], +d["citric acid"]]; });
+          overviewRunDimension = ndx.dimension(function(d) {return [+d["quality"], +d["citric acid"]]; });
+          runGroup = runDimension.group().reduceSum(function(d) { return +d["sulphates"]; });
+          overviewRunGroup = overviewRunDimension.group().reduceSum(function(d) { return +d["sulphates"]; });
+          
+          focusChart
+            .width(768)
+            .height(480)
+            .chart(function(c) { return dc.lineChart(c).interpolate('basis'); })
+            .x(d3.scale.linear().domain([0,0.11]))
+            .brushOn(false)
+            .yAxisLabel("Free sulfur dioxide")
+            .xAxisLabel("Citric Acid")
+            .clipPadding(10)
+            .elasticY(true)
+            .dimension(runDimension)
+            .group(runGroup)
+            .mouseZoomable(true)
+            .rangeChart(overviewChart)
+            .seriesAccessor(function(d) {return "Quality: " + d.key[0];})
+            .keyAccessor(function(d) {return +d.key[1];})
+            .valueAccessor(function(d) {return +d.value - 500;})
+            .legend(dc.legend().x(350).y(110).itemHeight(13).gap(10).horizontal(1).legendWidth(240).itemWidth(105));
+          focusChart.yAxis().tickFormat(function(d) {return d3.format(',d')(d+200);});
+          focusChart.margins().left += 40;
+          
+          focusChart.elasticX = function() {
+            return arguments.length ? this : false;
+          };
+            function rangesEqual (range1, range2) {
+                if (!range1 && !range2) {
+                    return true;
+                } else if (!range1 || !range2) {
+                    return false;
+                } else if (range1.length === 0 && range2.length === 0) {
+                    return true;
+                } else if (range1[0].valueOf() === range2[0].valueOf() &&
+                    range1[1].valueOf() === range2[1].valueOf()) {
+                    return true;
+                }
+                return false;
+            }
+          
+          overviewChart
+            .width(768)
+            .height(100)
+            .chart(function(c,_,_,i) {
+            var chart = dc.lineChart(c).interpolate('basis');
+            if(i===0)
+                chart.on('filtered', function (chart) {
+                    if (!chart.filter()) {
+                        dc.events.trigger(function () {
+                            overviewChart.focusChart().x().domain(overviewChart.focusChart().xOriginalDomain());
+                            overviewChart.focusChart().redraw();
+                        });
+                    } else if (!rangesEqual(chart.filter(), overviewChart.focusChart().filter())) {
+                        dc.events.trigger(function () {
+                            overviewChart.focusChart().focus(chart.filter());
+                        });
+                    }
+                });
+            return chart;
+            })
+            .x(d3.scale.linear().domain([0,0.11]))
+            .brushOn(true)
+            .xAxisLabel("Citric Acid")
+            .clipPadding(20)
+            .dimension(runDimension)
+            .group(runGroup)
+            .seriesAccessor(function(d) {return "citric acid: " + d.key[0];})
+            .keyAccessor(function(d) {return +d.key[1];})
+            .valueAccessor(function(d) {return +d.value - 500;})
+          dc.renderAll();
+          });
+    </script>
+
+</body>
+</html>
